@@ -14,6 +14,7 @@ import android.graphics.Rect;
 import android.graphics.RectF;
 import android.graphics.YuvImage;
 import android.hardware.Camera;
+import android.media.MediaPlayer;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
@@ -590,15 +591,20 @@ public final class FaceDetectRGBActivity extends AppCompatActivity implements Su
                                             AlertDialog.Builder builder = new AlertDialog.Builder(ctx);
                                             builder.setTitle(getString(R.string.app_name)).setNeutralButton(getString(R.string.close), null);
 
+                                            MediaPlayer mp;
 
                                             if(deltaAverage > LIMIT_AVERAGE){
                                                 builder.setMessage(getString(R.string.welcome));
-                                            }else
+                                                mp = MediaPlayer.create(getApplicationContext(), R.raw.welcome);
+                                            }else{
                                                 builder.setMessage(getString(R.string.no_mask));
-
+                                                mp = MediaPlayer.create(getApplicationContext(), R.raw.wearyourmask);
+                                            }
 
                                             AlertDialog alert = builder.create();
                                             alert.show();
+
+                                            mp.start();
                                         }
                                     });
                                 }
