@@ -8,6 +8,7 @@ import android.content.ContextWrapper;
 import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
+import android.graphics.Color;
 import android.graphics.ImageFormat;
 import android.graphics.PointF;
 import android.graphics.Rect;
@@ -154,10 +155,11 @@ public final class FaceDetectRGBActivity extends AppCompatActivity implements Su
         }
 
 
+        getSupportActionBar().hide();
+
         getSupportActionBar().setDisplayShowTitleEnabled(true);
         getSupportActionBar().setHomeButtonEnabled(true);
         getSupportActionBar().setDisplayHomeAsUpEnabled(true);
-        getSupportActionBar().setTitle("Face Detect");
 
         if (icicle != null)
             cameraId = icicle.getInt(BUNDLE_CAMERA_ID, 0);
@@ -172,6 +174,14 @@ public final class FaceDetectRGBActivity extends AppCompatActivity implements Su
         SurfaceHolder holder = mView.getHolder();
         holder.addCallback(this);
         holder.setFormat(ImageFormat.NV21);
+    }
+
+
+    @Override
+    public void onRequestPermissionsResult(int requestCode, String[] permissions, int[] grantResults) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
+
+        recreate();
     }
 
 
@@ -261,7 +271,7 @@ public final class FaceDetectRGBActivity extends AppCompatActivity implements Su
         Camera.CameraInfo cameraInfo = new Camera.CameraInfo();
         for (int i = 0; i < Camera.getNumberOfCameras(); i++) {
             Camera.getCameraInfo(i, cameraInfo);
-            if (cameraInfo.facing == Camera.CameraInfo.CAMERA_FACING_BACK) {
+            if (cameraInfo.facing == Camera.CameraInfo.CAMERA_FACING_FRONT) {
                 if (cameraId == 0) cameraId = i;
             }
         }
@@ -365,6 +375,7 @@ public final class FaceDetectRGBActivity extends AppCompatActivity implements Su
 
         mFaceView.setPreviewWidth(previewWidth);
         mFaceView.setPreviewHeight(previewHeight);
+        mFaceView.setRectColor(Color.RED);
     }
 
     private void setAutoFocus(Camera.Parameters cameraParameters) {
@@ -579,6 +590,8 @@ public final class FaceDetectRGBActivity extends AppCompatActivity implements Su
                                         public void run() {
                                             imagePreviewAdapter.add(faceCroped);
 
+                                            // Show Welcome alert and play audio
+
                                             Bitmap firstFace = Bitmap.createBitmap(faceCroped, 0, 0, faceCroped.getWidth() - 1, faceCroped.getHeight() / 2 - 1);
                                             Bitmap secondFace = Bitmap.createBitmap(faceCroped, 0, faceCroped.getHeight() / 2, faceCroped.getWidth() - 1, faceCroped.getHeight() / 2 - 1);
 
@@ -596,15 +609,22 @@ public final class FaceDetectRGBActivity extends AppCompatActivity implements Su
                                             if(deltaAverage > LIMIT_AVERAGE){
                                                 builder.setMessage(getString(R.string.welcome));
                                                 mp = MediaPlayer.create(getApplicationContext(), R.raw.welcome);
+
+                                                mFaceView.setRectColor(Color.GREEN);
                                             }else{
                                                 builder.setMessage(getString(R.string.no_mask));
                                                 mp = MediaPlayer.create(getApplicationContext(), R.raw.wearyourmask);
+
+                                                mFaceView.setRectColor(Color.RED);
                                             }
 
                                             AlertDialog alert = builder.create();
                                             alert.show();
 
                                             mp.start();
+
+
+
                                         }
                                     });
                                 }
