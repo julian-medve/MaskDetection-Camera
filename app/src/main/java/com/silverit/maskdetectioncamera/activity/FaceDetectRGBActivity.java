@@ -3,6 +3,7 @@ package com.silverit.maskdetectioncamera.activity;
 import android.Manifest;
 import android.annotation.TargetApi;
 import android.app.AlertDialog;
+import android.app.SearchManager;
 import android.content.Context;
 import android.content.ContextWrapper;
 import android.content.DialogInterface;
@@ -22,6 +23,7 @@ import android.os.Bundle;
 import android.os.Handler;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.content.ContextCompat;
+import android.support.v4.os.CancellationSignal;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.DefaultItemAnimator;
 import android.support.v7.widget.LinearLayoutManager;
@@ -46,6 +48,8 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Timer;
+import java.util.TimerTask;
 
 import com.silverit.maskdetectioncamera.R;
 import com.silverit.maskdetectioncamera.activity.ui.FaceOverlayView;
@@ -93,7 +97,7 @@ public final class FaceDetectRGBActivity extends AppCompatActivity implements Su
     private final CameraErrorCallback mErrorCallback = new CameraErrorCallback();
 
 
-    private static final int MAX_FACE = 10;
+    private static final int MAX_FACE = 5;
     private boolean isThreadWorking = false;
     private Handler handler;
     private FaceDetectThread detectThread = null;
@@ -117,7 +121,8 @@ public final class FaceDetectRGBActivity extends AppCompatActivity implements Su
     private static final int MY_CAMERA_REQUEST_CODE = 100;
 
 
-    private static final int LIMIT_AVERAGE = 40;
+    private static final int LIMIT_AVERAGE = 30;
+    private static final int CANCEL_DIALOG_DURATION = 1500;
 
 
     private TextView mTextTime;
@@ -616,28 +621,40 @@ public final class FaceDetectRGBActivity extends AppCompatActivity implements Su
 
                                             // Show Welcome alert and play audio
 
-                                            Bitmap firstFace = Bitmap.createBitmap(faceCroped, 0, 0, faceCroped.getWidth() - 1, faceCroped.getHeight() / 2 - 1);
-                                            Bitmap secondFace = Bitmap.createBitmap(faceCroped, 0, faceCroped.getHeight() / 2, faceCroped.getWidth() - 1, faceCroped.getHeight() / 2 - 1);
+                                            int firstFaceHeight = (int)Math.round(faceCroped.getHeight() * 0.5);
+
+                                            Bitmap firstFace = Bitmap.createBitmap(faceCroped, 0, 0, faceCroped.getWidth() - 1, firstFaceHeight - 1);
+                                            Bitmap secondFace = Bitmap.createBitmap(faceCroped, 0, firstFaceHeight, faceCroped.getWidth() - 1, faceCroped.getHeight() - firstFaceHeight - 1);
 
                                             int firstFaceAverage = ImageUtils.averageRGB(firstFace);
                                             int secondFaceAverage = ImageUtils.averageRGB(secondFace);
 
                                             int deltaAverage = ImageUtils.calcEuclideanDistance(firstFaceAverage, secondFaceAverage);
 
+                                            Log.d(TAG, "-------------------------------");
+                                            Log.d(TAG, firstFaceAverage + "");
+                                            Log.d(TAG, secondFaceAverage + "");
+                                            Log.d(TAG, deltaAverage + "");
 
                                             AlertDialog.Builder builder = new AlertDialog.Builder(ctx);
                                             builder.setTitle(getString(R.string.app_name))
                                                     .setNeutralButton(getString(R.string.close), new DialogInterface.OnClickListener() {
 
                                                         public void onClick(DialogInterface dialog, int which) {
-                                                            // TODO Auto-generated method stub
-
-                                                            mCamera.startPreview();
-
-                                                            mBottomLayout.setVisibility(View.GONE);
+                                                        // TODO Auto-generated method stub
+                                                            dialog.cancel();
                                                         }
                                                     })
-                                                    .setCancelable(false);
+                                                    .setCancelable(true)
+                                                    .setOnCancelListener(new DialogInterface.OnCancelListener(){
+
+                                                        @Override
+                                                        public void onCancel (DialogInterface arg0) {
+
+                                                            mCamera.startPreview();
+                                                            mBottomLayout.setVisibility(View.GONE);
+                                                        }
+                                                    });
 
 
                                             if(deltaAverage > LIMIT_AVERAGE){
@@ -659,12 +676,33 @@ public final class FaceDetectRGBActivity extends AppCompatActivity implements Su
                                                 mFaceView.setRectColor(Color.RED);
                                             }
 
-                                            AlertDialog alert = builder.create();
+                                            builder.setMessage(deltaAverage + "");
+
+
+                                            // Show Alert Dialog.
+
+                                            final AlertDialog alert = builder.create();
                                             alert.show();
 
-                                            mp.start();
+                                            // Stop FaceView Detection
 
                                             mCamera.stopPreview();
+
+                                            // If mask was not detected, dialog should be closed automatically.
+
+                                            if(deltaAverage < LIMIT_AVERAGE){
+                                                final Timer t = new Timer();
+                                                t.schedule(new TimerTask() {
+                                                    public void run() {
+                                                        alert.cancel();
+                                                        t.cancel();
+                                                    }
+                                                }, CANCEL_DIALOG_DURATION);
+                                            }
+
+                                            // Play Audio
+
+                                            mp.start();
                                         }
                                     });
                                 }

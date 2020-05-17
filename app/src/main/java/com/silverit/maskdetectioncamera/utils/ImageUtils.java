@@ -183,7 +183,7 @@ public class ImageUtils {
         int green = (greenColors/pixelCount);
         int blue = (blueColors/pixelCount);
 
-        return Color.argb(255, red, green, blue);
+        return Color.argb(0, red, green, blue);
     }
 
     public static int calcEuclideanDistance(int firstColor, int secondColor){
