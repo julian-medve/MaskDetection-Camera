@@ -5,4 +5,6 @@
     <color name="colorAccent">#FF4081</color>
 
     <color name="colorBlackOverlay">#44000000</color>
+    <color name="colorGradientStart">#406fe1</color>
+    <color name="colorGradientEnd">#a8b6da</color>
 </resources>

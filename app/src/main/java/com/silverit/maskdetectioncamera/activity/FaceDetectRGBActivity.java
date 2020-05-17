@@ -5,6 +5,7 @@ import android.annotation.TargetApi;
 import android.app.AlertDialog;
 import android.content.Context;
 import android.content.ContextWrapper;
+import android.content.DialogInterface;
 import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
@@ -34,10 +35,15 @@ import android.view.SurfaceView;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.WindowManager;
+import android.widget.ImageView;
+import android.widget.LinearLayout;
+import android.widget.TextView;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 
@@ -111,7 +117,15 @@ public final class FaceDetectRGBActivity extends AppCompatActivity implements Su
     private static final int MY_CAMERA_REQUEST_CODE = 100;
 
 
-    private static final int LIMIT_AVERAGE = 35;
+    private static final int LIMIT_AVERAGE = 40;
+
+
+    private TextView mTextTime;
+    private ImageView mImageFace;
+    private LinearLayout mBottomLayout;
+    private SimpleDateFormat formatter = new SimpleDateFormat("HH:mm:ss");
+    private final Object pauseLock = new Object();
+
 
     //==============================================================================================
     // Activity Methods
@@ -144,6 +158,12 @@ public final class FaceDetectRGBActivity extends AppCompatActivity implements Su
         RecyclerView.LayoutManager mLayoutManager = new LinearLayoutManager(getApplicationContext());
         recyclerView.setLayoutManager(mLayoutManager);
         recyclerView.setItemAnimator(new DefaultItemAnimator());
+
+
+        mBottomLayout = (LinearLayout) findViewById(R.id.layoutBottom);
+        mTextTime = (TextView) findViewById(R.id.textTime);
+        mImageFace = (ImageView) findViewById(R.id.detectedFace);
+        mImageFace.setClipToOutline(true);
 
 
         handler = new Handler();
@@ -447,6 +467,8 @@ public final class FaceDetectRGBActivity extends AppCompatActivity implements Su
         private byte[] data = null;
         private Context ctx;
         private Bitmap faceCroped;
+        MediaPlayer mp;
+
 
         public FaceDetectThread(Handler handler, Context ctx) {
             this.ctx = ctx;
@@ -458,9 +480,10 @@ public final class FaceDetectRGBActivity extends AppCompatActivity implements Su
             this.data = data;
         }
 
-        @TargetApi(Build.VERSION_CODES.KITKAT)
+        @Override
         public void run() {
 //            Log.i("FaceDetectThread", "running");
+
 
             float aspect = (float) previewHeight / (float) previewWidth;
             int w = prevSettingWidth;
@@ -588,7 +611,8 @@ public final class FaceDetectRGBActivity extends AppCompatActivity implements Su
                                 if (faceCroped != null) {
                                     handler.post(new Runnable() {
                                         public void run() {
-                                            imagePreviewAdapter.add(faceCroped);
+
+//                                            imagePreviewAdapter.add(faceCroped);
 
                                             // Show Welcome alert and play audio
 
@@ -602,15 +626,32 @@ public final class FaceDetectRGBActivity extends AppCompatActivity implements Su
 
 
                                             AlertDialog.Builder builder = new AlertDialog.Builder(ctx);
-                                            builder.setTitle(getString(R.string.app_name)).setNeutralButton(getString(R.string.close), null);
+                                            builder.setTitle(getString(R.string.app_name))
+                                                    .setNeutralButton(getString(R.string.close), new DialogInterface.OnClickListener() {
 
-                                            MediaPlayer mp;
+                                                        public void onClick(DialogInterface dialog, int which) {
+                                                            // TODO Auto-generated method stub
+
+                                                            mCamera.startPreview();
+
+                                                            mBottomLayout.setVisibility(View.GONE);
+                                                        }
+                                                    })
+                                                    .setCancelable(false);
+
 
                                             if(deltaAverage > LIMIT_AVERAGE){
                                                 builder.setMessage(getString(R.string.welcome));
                                                 mp = MediaPlayer.create(getApplicationContext(), R.raw.welcome);
 
                                                 mFaceView.setRectColor(Color.GREEN);
+
+                                                mBottomLayout.setVisibility(View.VISIBLE);
+                                                Date date = new Date();
+                                                mTextTime.setText(formatter.format(date));
+
+                                                mImageFace.setImageBitmap(faceCroped);
+
                                             }else{
                                                 builder.setMessage(getString(R.string.no_mask));
                                                 mp = MediaPlayer.create(getApplicationContext(), R.raw.wearyourmask);
@@ -623,8 +664,7 @@ public final class FaceDetectRGBActivity extends AppCompatActivity implements Su
 
                                             mp.start();
 
-
-
+                                            mCamera.stopPreview();
                                         }
                                     });
                                 }
