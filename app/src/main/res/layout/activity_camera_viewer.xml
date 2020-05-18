@@ -1,52 +1,45 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout android:orientation="vertical"
+<FrameLayout
     xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@color/colorPrimaryDark">
+    android:keepScreenOn="true">
 
-    <ImageView
-        android:layout_width="128dp"
-        android:layout_height="32dp"
-        android:layout_marginTop="15dp"
-        android:textAlignment="center"
-        android:src="@drawable/logo"
-        android:layout_gravity="center_horizontal"/>
-
-    <FrameLayout
+    <SurfaceView
+        android:id="@+id/surfaceview"
         android:layout_width="match_parent"
+        android:layout_height="match_parent"/>
+
+    <android.support.v7.widget.RecyclerView
+        android:id="@+id/recycler_view"
+        android:layout_width="@dimen/image_preview"
         android:layout_height="match_parent"
-        android:keepScreenOn="true"
-        android:background="@drawable/round_main"
-        android:layout_marginLeft="10dp"
-        android:layout_marginRight="10dp"
-        android:layout_marginTop="20dp"
-        android:layout_marginBottom="20dp">
+        android:layout_alignParentEnd="true"
+        android:layout_alignParentRight="true"
+        android:layout_margin="10dp"
+        android:scrollbars="vertical"
+        android:visibility="gone"/>
 
-        <SurfaceView
-            android:id="@+id/surfaceview"
-            android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            android:layout_margin="5dp"/>
-
-        <android.support.v7.widget.RecyclerView
-            android:id="@+id/recycler_view"
-            android:layout_width="@dimen/image_preview"
-            android:layout_height="match_parent"
-            android:layout_alignParentEnd="true"
-            android:layout_alignParentRight="true"
-            android:layout_margin="10dp"
-            android:scrollbars="vertical"
-            android:visibility="gone"/>
+    <RelativeLayout
+        android:id="@+id/topRedLayout"
+        android:layout_width="match_parent"
+        android:layout_height="60dp"
+        android:visibility="gone"
+        android:background="@color/colorStatusRed"
+        android:layout_gravity="bottom"
+        android:padding="5dp">
 
         <RelativeLayout
-            android:id="@+id/topRedLayout"
-            android:layout_gravity="right"
-            android:layout_width="200dp"
-            android:layout_height="50dp"
-            android:layout_margin="20dp"
-            android:visibility="visible"
-            android:background="@drawable/top_red">
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_centerInParent="true">
+
+            <ImageView
+                android:id="@+id/imageMask"
+                android:layout_width="40dp"
+                android:layout_height="40dp"
+                android:layout_centerVertical="true"
+                android:src="@drawable/medical_mask"/>
 
             <TextView
                 android:id="@+id/topStatus"
@@ -54,84 +47,45 @@
                 android:layout_height="wrap_content"
                 android:textColor="@android:color/white"
                 android:text="@string/no_mask"
-                android:layout_centerHorizontal="true"
-                android:layout_centerVertical="true" />
+                android:layout_centerVertical="true"
+                android:layout_toRightOf="@+id/imageMask"
+                android:layout_marginLeft="10dp"/>
 
         </RelativeLayout>
 
+    </RelativeLayout>
+
+    <RelativeLayout
+        android:id="@+id/topBlueLayout"
+        android:layout_width="match_parent"
+        android:layout_height="60dp"
+        android:visibility="visible"
+        android:background="@color/colorStatusGreen"
+        android:layout_gravity="bottom"
+        android:padding="5dp">
+
         <RelativeLayout
-            android:id="@+id/topBlueLayout"
-            android:layout_gravity="right"
-            android:layout_width="200dp"
-            android:layout_height="50dp"
-            android:layout_margin="20dp"
-            android:visibility="gone"
-            android:background="@drawable/top_blue">
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_centerInParent="true">
+
+            <ImageView
+                android:id="@+id/imageNoMask"
+                android:layout_width="40dp"
+                android:layout_height="40dp"
+                android:layout_centerVertical="true"
+                android:src="@drawable/shielded"/>
 
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:textColor="@android:color/white"
                 android:text="@string/welcome"
-                android:layout_centerHorizontal="true"
-                android:layout_centerVertical="true" />
+                android:layout_centerVertical="true"
+                android:layout_toRightOf="@+id/imageNoMask"
+                android:layout_marginLeft="10dp"/>
 
         </RelativeLayout>
+    </RelativeLayout>
 
-        <LinearLayout
-            android:id="@+id/layoutBottom"
-            android:layout_width="match_parent"
-            android:layout_height="80dp"
-            android:orientation="horizontal"
-            android:layout_gravity="bottom"
-            android:layout_marginBottom="30dp"
-            android:visibility="visible">
-
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="match_parent"
-                android:gravity="center_horizontal|center_vertical">
-
-                <LinearLayout
-                    android:layout_width="80dp"
-                    android:layout_height="match_parent"
-                    android:background="@drawable/face_back"
-                    android:elevation="20dp">
-
-                    <ImageView
-                        android:id="@+id/detectedFace"
-                        android:layout_width="70dp"
-                        android:layout_height="70dp"
-                        android:contentDescription="@string/app_name"
-                        android:background="@drawable/round_outline"
-                        android:layout_gravity="center"
-                        android:layout_marginLeft="5dp"
-                        />
-
-                </LinearLayout>
-
-                <LinearLayout
-                    android:layout_width="wrap_content"
-                    android:layout_height="60dp"
-                    android:paddingLeft="20dp"
-                    android:paddingRight="20dp"
-                    android:background="@drawable/gradient_right"
-                    android:layout_marginLeft="-20dp"
-                    android:elevation="0dp">
-
-                    <TextView
-                        android:id="@+id/textTime"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="@string/app_name"
-                        android:textStyle="bold"
-                        android:textSize="16sp"
-                        android:layout_gravity="center"
-                        android:paddingLeft="20dp"
-                        android:textColor="@android:color/white" />
-
-                </LinearLayout>
-            </LinearLayout>
-        </LinearLayout>
-    </FrameLayout>
-</LinearLayout>
+</FrameLayout>

@@ -129,8 +129,6 @@ public final class FaceDetectRGBActivity extends AppCompatActivity implements Su
     private static final int BLINK_DURATION = 700;
 
 
-    private TextView mTextTime;
-    private ImageView mImageFace;
     private LinearLayout mBottomLayout;
     private SimpleDateFormat formatter = new SimpleDateFormat("HH:mm:ss");
     private RelativeLayout mBlueLayout;
@@ -176,13 +174,8 @@ public final class FaceDetectRGBActivity extends AppCompatActivity implements Su
 
         // Create Views from Layout
 
-        mBottomLayout = (LinearLayout) findViewById(R.id.layoutBottom);
-        mTextTime = (TextView) findViewById(R.id.textTime);
-        mImageFace = (ImageView) findViewById(R.id.detectedFace);
-        mImageFace.setClipToOutline(true);
         mRedLayout = (RelativeLayout) findViewById(R.id.topRedLayout);
         mBlueLayout = (RelativeLayout) findViewById(R.id.topBlueLayout);
-
 
 
         handler = new Handler();
@@ -659,22 +652,37 @@ public final class FaceDetectRGBActivity extends AppCompatActivity implements Su
 
                                             if(deltaAverage > LIMIT_AVERAGE){
 
-                                                showFaceLayout(faceCroped);
-                                                showTopBlink();
-
                                                 mp = MediaPlayer.create(getApplicationContext(), R.raw.welcome);
+                                                mFaceView.setRectColor(Color.GREEN);
+                                                mBlueLayout.setVisibility(View.VISIBLE);
 
                                             }else{
 
                                                 mp = MediaPlayer.create(getApplicationContext(), R.raw.wearyourmask);
                                                 mFaceView.setRectColor(Color.RED);
-                                                showTopFixed();
+                                                mRedLayout.setVisibility(View.VISIBLE);
                                             }
 
                                             // Play Audio
                                             mp.start();
 
                                             mCamera.stopPreview();
+
+
+                                            final Timer t = new Timer();
+                                            t.schedule(new TimerTask() {
+                                                public void run() {
+
+                                                if(mRedLayout.getVisibility() == View.VISIBLE)
+                                                    mRedLayout.setVisibility(View.INVISIBLE);
+                                                else
+                                                    mBlueLayout.setVisibility(View.INVISIBLE);
+
+                                                mCamera.startPreview();
+                                                t.cancel();
+
+                                                }
+                                            }, BLINK_DURATION * mMaxBlinkCount);
 
                                         }
                                     });
@@ -715,9 +723,6 @@ public final class FaceDetectRGBActivity extends AppCompatActivity implements Su
 
         mBottomLayout.setVisibility(View.VISIBLE);
         Date date = new Date();
-        mTextTime.setText(formatter.format(date));
-
-        mImageFace.setImageBitmap(croppedFace);
     }
 
     private void showTopFixed(){
