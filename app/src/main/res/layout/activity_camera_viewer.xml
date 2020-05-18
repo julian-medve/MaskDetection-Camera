@@ -59,7 +59,7 @@
         android:id="@+id/topBlueLayout"
         android:layout_width="match_parent"
         android:layout_height="60dp"
-        android:visibility="visible"
+        android:visibility="gone"
         android:background="@color/colorStatusGreen"
         android:layout_gravity="bottom"
         android:padding="5dp">
