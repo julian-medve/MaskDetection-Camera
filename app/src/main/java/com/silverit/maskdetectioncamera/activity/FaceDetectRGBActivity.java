@@ -639,8 +639,8 @@ public final class FaceDetectRGBActivity extends AppCompatActivity implements Su
 
                                             int secondFaceY = (int) Math.round(faceCroped.getHeight() * 0.6);
                                             int secondFaceHeight = (int) Math.round(faceCroped.getHeight() * 0.3);
-                                            int secondFaceX = (int) Math.round(faceCroped.getWidth() * 0.1);
-                                            int secondFaceWidth = (int) Math.round(faceCroped.getWidth() * 0.8);
+                                            int secondFaceX = (int) Math.round(faceCroped.getWidth() * 0.2);
+                                            int secondFaceWidth = (int) Math.round(faceCroped.getWidth() * 0.6);
 
                                             Bitmap firstFace = Bitmap.createBitmap(faceCroped, 0, 0, faceCroped.getWidth() - 1, firstFaceHeight - 1);
                                             Bitmap secondFace = Bitmap.createBitmap(faceCroped, secondFaceX, secondFaceY, secondFaceWidth, secondFaceHeight);
