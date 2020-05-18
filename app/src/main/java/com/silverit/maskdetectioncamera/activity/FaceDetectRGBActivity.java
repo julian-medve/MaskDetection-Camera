@@ -1,6 +1,8 @@
 package com.silverit.maskdetectioncamera.activity;
 
 import android.Manifest;
+import android.animation.ObjectAnimator;
+import android.annotation.SuppressLint;
 import android.annotation.TargetApi;
 import android.app.AlertDialog;
 import android.app.SearchManager;
@@ -37,8 +39,10 @@ import android.view.SurfaceView;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.WindowManager;
+import android.view.animation.Animation;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
+import android.widget.RelativeLayout;
 import android.widget.TextView;
 
 import java.io.ByteArrayInputStream;
@@ -122,14 +126,17 @@ public final class FaceDetectRGBActivity extends AppCompatActivity implements Su
 
 
     private static final int LIMIT_AVERAGE = 30;
-    private static final int CANCEL_DIALOG_DURATION = 1500;
+    private static final int BLINK_DURATION = 700;
 
 
     private TextView mTextTime;
     private ImageView mImageFace;
     private LinearLayout mBottomLayout;
     private SimpleDateFormat formatter = new SimpleDateFormat("HH:mm:ss");
-    private final Object pauseLock = new Object();
+    private RelativeLayout mBlueLayout;
+    private RelativeLayout mRedLayout;
+    private static final int mMaxBlinkCount = 4;
+    private int mBlinkCount = 0;
 
 
     //==============================================================================================
@@ -139,6 +146,7 @@ public final class FaceDetectRGBActivity extends AppCompatActivity implements Su
     /**
      * Initializes the UI and initiates the creation of a face detector.
      */
+    @SuppressLint("WrongConstant")
     @Override
     public void onCreate(Bundle icicle) {
         super.onCreate(icicle);
@@ -165,10 +173,16 @@ public final class FaceDetectRGBActivity extends AppCompatActivity implements Su
         recyclerView.setItemAnimator(new DefaultItemAnimator());
 
 
+
+        // Create Views from Layout
+
         mBottomLayout = (LinearLayout) findViewById(R.id.layoutBottom);
         mTextTime = (TextView) findViewById(R.id.textTime);
         mImageFace = (ImageView) findViewById(R.id.detectedFace);
         mImageFace.setClipToOutline(true);
+        mRedLayout = (RelativeLayout) findViewById(R.id.topRedLayout);
+        mBlueLayout = (RelativeLayout) findViewById(R.id.topBlueLayout);
+
 
 
         handler = new Handler();
@@ -623,11 +637,17 @@ public final class FaceDetectRGBActivity extends AppCompatActivity implements Su
 
                                             int firstFaceHeight = (int)Math.round(faceCroped.getHeight() * 0.5);
 
+                                            int secondFaceY = (int) Math.round(faceCroped.getHeight() * 0.6);
+                                            int secondFaceHeight = (int) Math.round(faceCroped.getHeight() * 0.3);
+                                            int secondFaceX = (int) Math.round(faceCroped.getWidth() * 0.1);
+                                            int secondFaceWidth = (int) Math.round(faceCroped.getWidth() * 0.8);
+
                                             Bitmap firstFace = Bitmap.createBitmap(faceCroped, 0, 0, faceCroped.getWidth() - 1, firstFaceHeight - 1);
-                                            Bitmap secondFace = Bitmap.createBitmap(faceCroped, 0, firstFaceHeight, faceCroped.getWidth() - 1, faceCroped.getHeight() - firstFaceHeight - 1);
+                                            Bitmap secondFace = Bitmap.createBitmap(faceCroped, secondFaceX, secondFaceY, secondFaceWidth, secondFaceHeight);
 
                                             int firstFaceAverage = ImageUtils.averageRGB(firstFace);
                                             int secondFaceAverage = ImageUtils.averageRGB(secondFace);
+
 
                                             int deltaAverage = ImageUtils.calcEuclideanDistance(firstFaceAverage, secondFaceAverage);
 
@@ -636,73 +656,26 @@ public final class FaceDetectRGBActivity extends AppCompatActivity implements Su
                                             Log.d(TAG, secondFaceAverage + "");
                                             Log.d(TAG, deltaAverage + "");
 
-                                            AlertDialog.Builder builder = new AlertDialog.Builder(ctx);
-                                            builder.setTitle(getString(R.string.app_name))
-                                                    .setNeutralButton(getString(R.string.close), new DialogInterface.OnClickListener() {
-
-                                                        public void onClick(DialogInterface dialog, int which) {
-                                                        // TODO Auto-generated method stub
-                                                            dialog.cancel();
-                                                        }
-                                                    })
-                                                    .setCancelable(true)
-                                                    .setOnCancelListener(new DialogInterface.OnCancelListener(){
-
-                                                        @Override
-                                                        public void onCancel (DialogInterface arg0) {
-
-                                                            mCamera.startPreview();
-                                                            mBottomLayout.setVisibility(View.GONE);
-                                                        }
-                                                    });
-
 
                                             if(deltaAverage > LIMIT_AVERAGE){
-                                                builder.setMessage(getString(R.string.welcome));
+
+                                                showFaceLayout(faceCroped);
+                                                showTopBlink();
+
                                                 mp = MediaPlayer.create(getApplicationContext(), R.raw.welcome);
 
-                                                mFaceView.setRectColor(Color.GREEN);
-
-                                                mBottomLayout.setVisibility(View.VISIBLE);
-                                                Date date = new Date();
-                                                mTextTime.setText(formatter.format(date));
-
-                                                mImageFace.setImageBitmap(faceCroped);
-
                                             }else{
-                                                builder.setMessage(getString(R.string.no_mask));
+
                                                 mp = MediaPlayer.create(getApplicationContext(), R.raw.wearyourmask);
-
                                                 mFaceView.setRectColor(Color.RED);
-                                            }
-
-                                            builder.setMessage(deltaAverage + "");
-
-
-                                            // Show Alert Dialog.
-
-                                            final AlertDialog alert = builder.create();
-                                            alert.show();
-
-                                            // Stop FaceView Detection
-
-                                            mCamera.stopPreview();
-
-                                            // If mask was not detected, dialog should be closed automatically.
-
-                                            if(deltaAverage < LIMIT_AVERAGE){
-                                                final Timer t = new Timer();
-                                                t.schedule(new TimerTask() {
-                                                    public void run() {
-                                                        alert.cancel();
-                                                        t.cancel();
-                                                    }
-                                                }, CANCEL_DIALOG_DURATION);
+                                                showTopFixed();
                                             }
 
                                             // Play Audio
-
                                             mp.start();
+
+                                            mCamera.stopPreview();
+
                                         }
                                     });
                                 }
@@ -733,6 +706,72 @@ public final class FaceDetectRGBActivity extends AppCompatActivity implements Su
                 }
             });
         }
+    }
+
+
+    private void showFaceLayout(Bitmap croppedFace){
+
+        mFaceView.setRectColor(Color.GREEN);
+
+        mBottomLayout.setVisibility(View.VISIBLE);
+        Date date = new Date();
+        mTextTime.setText(formatter.format(date));
+
+        mImageFace.setImageBitmap(croppedFace);
+    }
+
+    private void showTopFixed(){
+
+        mRedLayout.setVisibility(View.VISIBLE);
+
+        final Timer t = new Timer();
+        t.schedule(new TimerTask() {
+            public void run() {
+                mRedLayout.setVisibility(View.INVISIBLE);
+                mCamera.startPreview();
+                t.cancel();
+            }
+        }, BLINK_DURATION * mMaxBlinkCount);
+    }
+
+    private void showTopBlink(){
+
+        final Handler handler = new Handler();
+        new Thread(new Runnable() {
+            @Override
+            public void run() {
+                try{Thread.sleep(BLINK_DURATION);}catch (Exception e) {}
+                handler.post(new Runnable() {
+                    @Override
+                    public void run() {
+
+                        if(mBlueLayout.getVisibility() == View.VISIBLE){
+
+                            mRedLayout.setVisibility(View.VISIBLE);
+                            mBlueLayout.setVisibility(View.GONE);
+                        }else{
+
+                            mRedLayout.setVisibility(View.VISIBLE);
+                            mBlueLayout.setVisibility(View.VISIBLE);
+                        }
+                        mBlinkCount++;
+
+                        if(mBlinkCount == mMaxBlinkCount){
+
+                            mBlinkCount = 0;
+
+                            mRedLayout.setVisibility(View.GONE);
+                            mBlueLayout.setVisibility(View.GONE);
+                            mBottomLayout.setVisibility(View.GONE);
+
+                            mCamera.startPreview();
+                        }
+                        else
+                            showTopBlink();
+                    }
+                });
+            }
+        }).start();
     }
 
     /**
