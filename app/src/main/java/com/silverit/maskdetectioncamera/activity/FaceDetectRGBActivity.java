@@ -125,7 +125,7 @@ public final class FaceDetectRGBActivity extends AppCompatActivity implements Su
     private static final int MY_CAMERA_REQUEST_CODE = 100;
 
 
-    private static final int LIMIT_AVERAGE = 30;
+    private static final int LIMIT_AVERAGE = 60;
     private static final int BLINK_DURATION = 700;
 
 
