@@ -1,6 +1,27 @@
 <resources>
-    <string name="app_name">QUICK Access</string>
-    <string name="no_mask">Wear your Mask</string>
-    <string name="welcome">WELCOME</string>
-    <string name="close">Close</string>
+    <string name="app_name" translatable="false">QUICK Access</string>
+
+    <string name="select_language" translatable="false">Select language</string>
+    <string name="language_english" translatable="false">English</string>
+    <string name="language_french" translatable="false">français</string>
+    <string name="language_italian" translatable="false">Italiano</string>
+
+    <string-array name="select_array">
+        <item>Select Language</item>
+        <item>Choisir la langue</item>
+        <item>Seleziona la lingua</item>
+    </string-array>
+
+    <string-array name="welcome_array">
+        <item>WELCOME</item>
+        <item>Vous Pouvez Rentrer</item>
+        <item>ACCESSO CONSENTITO</item>
+    </string-array>
+
+    <string-array name="mask_array">
+        <item>Wear your Mask</item>
+        <item>Mettez Votre Masque</item>
+        <item>Indossare La Maschera, Grazie</item>
+    </string-array>
+
 </resources>

@@ -20,6 +20,15 @@
         android:scrollbars="vertical"
         android:visibility="gone"/>
 
+    <ImageView
+        android:id="@+id/btnSettings"
+        android:layout_width="50dp"
+        android:layout_height="50dp"
+        android:src="@drawable/settings"
+        android:layout_marginRight="30dp"
+        android:layout_marginTop="50dp"
+        android:layout_gravity="right"/>
+
     <RelativeLayout
         android:id="@+id/topRedLayout"
         android:layout_width="match_parent"
@@ -42,11 +51,11 @@
                 android:src="@drawable/medical_mask"/>
 
             <TextView
-                android:id="@+id/topStatus"
+                android:id="@+id/textMask"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:textColor="@android:color/white"
-                android:text="@string/no_mask"
+                android:text="@string/app_name"
                 android:layout_centerVertical="true"
                 android:layout_toRightOf="@+id/imageMask"
                 android:layout_marginLeft="10dp"/>
@@ -77,10 +86,11 @@
                 android:src="@drawable/shielded"/>
 
             <TextView
+                android:id="@+id/textWelcome"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:textColor="@android:color/white"
-                android:text="@string/welcome"
+                android:text="@string/app_name"
                 android:layout_centerVertical="true"
                 android:layout_toRightOf="@+id/imageNoMask"
                 android:layout_marginLeft="10dp"/>
