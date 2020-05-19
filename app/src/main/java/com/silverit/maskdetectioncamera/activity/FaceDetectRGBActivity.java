@@ -209,6 +209,24 @@ public final class FaceDetectRGBActivity extends AppCompatActivity implements Su
                         currentLanguage = n;
 
                         dialog.cancel();
+
+
+                        switch(n){
+                            case 0:
+                                mpWelcome = MediaPlayer.create(FaceDetectRGBActivity.this, R.raw.welcome_eng);
+                                mpMask = MediaPlayer.create(FaceDetectRGBActivity.this, R.raw.wearyourmask_eng);
+                                break;
+
+                            case 1:
+                                mpWelcome = MediaPlayer.create(FaceDetectRGBActivity.this, R.raw.welcome_fr);
+                                mpMask = MediaPlayer.create(FaceDetectRGBActivity.this, R.raw.wearyourmask_fr);
+                                break;
+
+                            case 2: mpWelcome = MediaPlayer.create(FaceDetectRGBActivity.this, R.raw.welcome_it);
+                                mpMask = MediaPlayer.create(FaceDetectRGBActivity.this, R.raw.wearyourmask_it);
+                                break;
+
+                        }
                     }
                 });
                 adb.setCancelable(true);
@@ -238,9 +256,12 @@ public final class FaceDetectRGBActivity extends AppCompatActivity implements Su
 
 
 
-        mpWelcome = MediaPlayer.create(this, R.raw.welcome);
-        mpMask = MediaPlayer.create(this, R.raw.wearyourmask);
+        mpWelcome = MediaPlayer.create(this, R.raw.welcome_eng);
+        mpMask = MediaPlayer.create(this, R.raw.wearyourmask_eng);
         mpMessage = MediaPlayer.create(this, R.raw.message);
+
+        mTextWelcome.setText(listWelcome[0]);
+        mTextMask.setText(listMask[0]);
     }
 
 
