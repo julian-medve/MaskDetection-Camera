@@ -1,14 +1,9 @@
 package com.silverit.maskdetectioncamera.activity;
 
 import android.Manifest;
-import android.animation.ObjectAnimator;
 import android.annotation.SuppressLint;
-import android.annotation.TargetApi;
 import android.app.AlertDialog;
-import android.app.SearchManager;
 import android.content.Context;
-import android.content.ContextWrapper;
-import android.content.DialogInterface;
 import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
@@ -19,13 +14,13 @@ import android.graphics.Rect;
 import android.graphics.RectF;
 import android.graphics.YuvImage;
 import android.hardware.Camera;
+import android.media.AudioManager;
 import android.media.MediaPlayer;
-import android.os.Build;
+import android.media.SoundPool;
 import android.os.Bundle;
 import android.os.Handler;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.content.ContextCompat;
-import android.support.v4.os.CancellationSignal;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.DefaultItemAnimator;
 import android.support.v7.widget.LinearLayoutManager;
@@ -39,14 +34,12 @@ import android.view.SurfaceView;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.WindowManager;
-import android.view.animation.Animation;
-import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.RelativeLayout;
-import android.widget.TextView;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
+import java.io.IOException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
@@ -113,6 +106,8 @@ public final class FaceDetectRGBActivity extends AppCompatActivity implements Su
     private FaceResult faces_previous[];
     private int Id = 0;
 
+    private Handler playHandler;
+
     private String BUNDLE_CAMERA_ID = "camera";
 
 
@@ -135,6 +130,12 @@ public final class FaceDetectRGBActivity extends AppCompatActivity implements Su
     private RelativeLayout mRedLayout;
     private static final int mMaxBlinkCount = 4;
     private int mBlinkCount = 0;
+
+    private MediaPlayer mpWelcome;
+    private MediaPlayer mpMask;
+    private SoundPool pool;
+
+    private int welcomeAudioId, wearMaskAudioId;
 
 
     //==============================================================================================
@@ -170,7 +171,7 @@ public final class FaceDetectRGBActivity extends AppCompatActivity implements Su
         recyclerView.setLayoutManager(mLayoutManager);
         recyclerView.setItemAnimator(new DefaultItemAnimator());
 
-
+        this.playHandler = new Handler(getBaseContext().getMainLooper());
 
         // Create Views from Layout
 
@@ -195,6 +196,14 @@ public final class FaceDetectRGBActivity extends AppCompatActivity implements Su
 
         if (icicle != null)
             cameraId = icicle.getInt(BUNDLE_CAMERA_ID, 0);
+
+
+
+        mpWelcome = MediaPlayer.create(this, R.raw.welcome);
+        mpMask = MediaPlayer.create(this, R.raw.wearyourmask);
+        pool = new SoundPool.Builder().build();
+        this.welcomeAudioId = pool.load(this.getApplicationContext(), R.raw.welcome, 1);
+        this.wearMaskAudioId = pool.load(this.getApplicationContext(), R.raw.wearyourmask, 1);
     }
 
 
@@ -479,7 +488,6 @@ public final class FaceDetectRGBActivity extends AppCompatActivity implements Su
         private byte[] data = null;
         private Context ctx;
         private Bitmap faceCroped;
-        MediaPlayer mp;
 
 
         public FaceDetectThread(Handler handler, Context ctx) {
@@ -652,19 +660,19 @@ public final class FaceDetectRGBActivity extends AppCompatActivity implements Su
 
                                             if(deltaAverage > LIMIT_AVERAGE){
 
-                                                mp = MediaPlayer.create(getApplicationContext(), R.raw.welcome);
+                                                playSound(true);
+
                                                 mFaceView.setRectColor(Color.GREEN);
                                                 mBlueLayout.setVisibility(View.VISIBLE);
 
                                             }else{
 
-                                                mp = MediaPlayer.create(getApplicationContext(), R.raw.wearyourmask);
+                                                playSound(false);
+
                                                 mFaceView.setRectColor(Color.RED);
                                                 mRedLayout.setVisibility(View.VISIBLE);
                                             }
 
-                                            // Play Audio
-                                            mp.start();
 
                                             mCamera.stopPreview();
 
@@ -673,16 +681,26 @@ public final class FaceDetectRGBActivity extends AppCompatActivity implements Su
                                             t.schedule(new TimerTask() {
                                                 public void run() {
 
-                                                if(mRedLayout.getVisibility() == View.VISIBLE)
-                                                    mRedLayout.setVisibility(View.INVISIBLE);
-                                                else
-                                                    mBlueLayout.setVisibility(View.INVISIBLE);
+                                                    if(mRedLayout.getVisibility() == View.VISIBLE)
+                                                        mRedLayout.setVisibility(View.INVISIBLE);
+                                                    else
+                                                        mBlueLayout.setVisibility(View.INVISIBLE);
 
-                                                mCamera.startPreview();
-                                                t.cancel();
+                                                    mCamera.startPreview();
+                                                    t.cancel();
 
+//                                                    if(mpWelcome.isPlaying()){
+//                                                        mpWelcome.stop();
+//                                                        mpWelcome.release();
+//                                                    }
+//
+//
+//                                                    if(mpMask.isPlaying()){
+//                                                        mpMask.stop();
+//                                                        mpWelcome.release();
+//                                                    }
                                                 }
-                                            }, BLINK_DURATION * mMaxBlinkCount);
+                                            }, 4000);
 
                                         }
                                     });
@@ -716,6 +734,20 @@ public final class FaceDetectRGBActivity extends AppCompatActivity implements Su
         }
     }
 
+    private void playSound(final boolean isWelcome){
+        FaceDetectRGBActivity.this.runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+                try {
+//                    pool.play(isWelcome ? welcomeAudioId : wearMaskAudioId, 1, 1, 1, 0, 1);
+                    Log.e("play", "isWelcome: "+isWelcome+", isPlaying: "+(isWelcome ? mpWelcome : mpMask).isPlaying());
+                    (isWelcome ? mpWelcome : mpMask).start();
+                } catch (Exception e) {
+                    Log.e("play error", e.getMessage());
+                }
+            }
+        });
+    }
 
     private void showFaceLayout(Bitmap croppedFace){
 
