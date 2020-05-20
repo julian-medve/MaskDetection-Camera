@@ -6,6 +6,7 @@ import android.app.AlertDialog;
 import android.app.Dialog;
 import android.content.Context;
 import android.content.DialogInterface;
+import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
@@ -138,6 +139,7 @@ public final class FaceDetectRGBActivity extends AppCompatActivity implements Su
     private MediaPlayer mpMask;
     private MediaPlayer mpMessage;
     private ImageView btnSetting;
+    private ImageView btnBluetooth;
 
     private CharSequence languages[];
     private String[] listWelcome;
@@ -185,8 +187,10 @@ public final class FaceDetectRGBActivity extends AppCompatActivity implements Su
         mRedLayout = (RelativeLayout) findViewById(R.id.topRedLayout);
         mBlueLayout = (RelativeLayout) findViewById(R.id.topBlueLayout);
         btnSetting = (ImageView) findViewById(R.id.btnSettings);
+        btnBluetooth = (ImageView) findViewById(R.id.btnBluetooth);
         mTextWelcome = (TextView) findViewById(R.id.textWelcome);
         mTextMask = (TextView) findViewById(R.id.textMask);
+
 
         languages = new CharSequence[] { getString(R.string.language_english), getString(R.string.language_french), getString(R.string.language_italian)};
         listWelcome = getResources().getStringArray(R.array.welcome_array);
@@ -262,6 +266,14 @@ public final class FaceDetectRGBActivity extends AppCompatActivity implements Su
 
         mTextWelcome.setText(listWelcome[0]);
         mTextMask.setText(listMask[0]);
+
+        btnBluetooth.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                Intent intent = new Intent(FaceDetectRGBActivity.this, BluetoothActivity.class);
+                startActivity(intent);
+            }
+        });
     }
 
 

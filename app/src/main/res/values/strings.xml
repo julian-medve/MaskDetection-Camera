@@ -23,5 +23,6 @@
         <item>Mettez Votre Masque</item>
         <item>Indossare La Maschera, Grazie</item>
     </string-array>
+    <string name="title_activity_bluetooth">BluetoothActivity</string>
 
 </resources>

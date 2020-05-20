@@ -21,6 +21,15 @@
         android:visibility="gone"/>
 
     <ImageView
+        android:id="@+id/btnBluetooth"
+        android:layout_width="50dp"
+        android:layout_height="50dp"
+        android:src="@drawable/bluetooth"
+        android:layout_marginLeft="30dp"
+        android:layout_marginTop="50dp"
+        android:layout_gravity="left"/>
+
+    <ImageView
         android:id="@+id/btnSettings"
         android:layout_width="50dp"
         android:layout_height="50dp"
