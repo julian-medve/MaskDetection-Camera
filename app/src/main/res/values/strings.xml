@@ -25,4 +25,11 @@
     </string-array>
     <string name="title_activity_bluetooth">BluetoothActivity</string>
 
+    <string name="title_settings_dialog">Settings</string>
+    <string name="option_settings_language">Languages</string>
+    <string name="option_settings_bluetooth">Bluetooth</string>
+
+    <string name="option_bluetooth_scan">Discover New Devices</string>
+    <string name="option_bluetooth_show">Show Paired Devices</string>
+
 </resources>

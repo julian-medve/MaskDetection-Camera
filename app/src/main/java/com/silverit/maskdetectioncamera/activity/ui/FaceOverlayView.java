@@ -13,6 +13,9 @@ import android.util.DisplayMetrics;
 import android.util.TypedValue;
 import android.view.View;
 
+import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
+import java.nio.charset.Charset;
 import java.text.DecimalFormat;
 
 import com.silverit.maskdetectioncamera.model.FaceResult;
@@ -70,6 +73,15 @@ public class FaceOverlayView extends View {
         this.fps = fps;
     }
 
+    // ========================         Bluetooth           ========================== //
+
+    private String bluetoothData = "";
+
+    public void setBluetoothData(String data){
+        this.bluetoothData = data;
+    }
+
+
     public void setFaces(FaceResult[] faces) {
         mFaces = faces;
         invalidate();
@@ -125,6 +137,38 @@ public class FaceOverlayView extends View {
 
                     canvas.drawRect(rectF, mPaint);
 
+
+                    byte[] bytes = bluetoothData.getBytes(Charset.forName("UTF-8"));
+                    float[] floatVlaues = new float[4];
+
+
+                    String temperature = "";
+
+                    for(int i = 0; i < 4; i++){
+
+                        if(bytes.length >= (i + 1) * 5){
+
+                            byte[] tempBytes = new byte[4];
+
+                            tempBytes[0] = bytes[i * 5];
+                            tempBytes[1] = bytes[i * 5 + 1];
+                            tempBytes[2] = bytes[i * 5 + 2];
+                            tempBytes[3] = bytes[i * 5 + 3];
+
+                            floatVlaues[i] = ByteBuffer.wrap(tempBytes).order(ByteOrder.LITTLE_ENDIAN).getFloat();
+                        }
+                        else
+                            floatVlaues[i] = 0.0f;
+
+                        if(i < 2)
+                            temperature += floatVlaues[i] +"F ";
+                        else
+                            temperature += floatVlaues[i] +"C ";
+                    }
+
+
+                    canvas.drawText("Bluetooth data : " + temperature, rectF.left, rectF.bottom + mTextPaint.getTextSize(), mTextPaint);
+
                     /*
                     canvas.drawText("ID " + face.getId(), rectF.left, rectF.bottom + mTextPaint.getTextSize(), mTextPaint);
                     canvas.drawText("Confidence " + face.getConfidence(), rectF.left, rectF.bottom + mTextPaint.getTextSize() * 2, mTextPaint);
@@ -140,6 +184,15 @@ public class FaceOverlayView extends View {
         // Draw Text FPS
 //        canvas.drawText("Detected_Frame/s: " + df2.format(fps) + " @ " + previewWidth + "x" + previewHeight, mTextPaint.getTextSize(), mTextPaint.getTextSize(), mTextPaint);
     }
+
+    private float convertToFloat(byte[] bytes, int index){
+
+        byte[] bytes1 = new byte[4];
+        bytes1[0] = bytes[0];
+
+        return ByteBuffer.wrap(bytes1).order(ByteOrder.LITTLE_ENDIAN).getFloat();
+    }
+
 
     public void setPreviewWidth(int previewWidth) {
         this.previewWidth = previewWidth;

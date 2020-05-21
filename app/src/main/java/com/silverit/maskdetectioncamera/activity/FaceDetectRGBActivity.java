@@ -1,12 +1,15 @@
 package com.silverit.maskdetectioncamera.activity;
 
 import android.Manifest;
-import android.annotation.SuppressLint;
 import android.app.AlertDialog;
-import android.app.Dialog;
+import android.bluetooth.BluetoothAdapter;
+import android.bluetooth.BluetoothDevice;
+import android.bluetooth.BluetoothSocket;
+import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
+import android.content.IntentFilter;
 import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
@@ -17,12 +20,11 @@ import android.graphics.Rect;
 import android.graphics.RectF;
 import android.graphics.YuvImage;
 import android.hardware.Camera;
-import android.media.AudioManager;
 import android.media.FaceDetector;
 import android.media.MediaPlayer;
-import android.media.SoundPool;
 import android.os.Bundle;
 import android.os.Handler;
+import android.os.SystemClock;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.content.ContextCompat;
 import android.support.v7.app.AppCompatActivity;
@@ -38,20 +40,28 @@ import android.view.SurfaceView;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.WindowManager;
+import android.widget.AdapterView;
+import android.widget.ArrayAdapter;
 import android.widget.ImageView;
-import android.widget.LinearLayout;
+import android.widget.ListView;
 import android.widget.RelativeLayout;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.io.UnsupportedEncodingException;
+import java.lang.reflect.Method;
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Set;
 import java.util.Timer;
 import java.util.TimerTask;
+import java.util.UUID;
 
 import com.silverit.maskdetectioncamera.R;
 import com.silverit.maskdetectioncamera.activity.ui.FaceOverlayView;
@@ -59,8 +69,6 @@ import com.silverit.maskdetectioncamera.adapter.ImagePreviewAdapter;
 import com.silverit.maskdetectioncamera.model.FaceResult;
 import com.silverit.maskdetectioncamera.utils.CameraErrorCallback;
 import com.silverit.maskdetectioncamera.utils.ImageUtils;
-import com.silverit.maskdetectioncamera.utils.SoundItem;
-import com.silverit.maskdetectioncamera.utils.SoundThread;
 import com.silverit.maskdetectioncamera.utils.Util;
 
 
@@ -148,6 +156,7 @@ public final class FaceDetectRGBActivity extends AppCompatActivity implements Su
 
     private int currentLanguage = 0;
 
+
     //==============================================================================================
     // Activity Methods
     //==============================================================================================
@@ -187,7 +196,6 @@ public final class FaceDetectRGBActivity extends AppCompatActivity implements Su
         mRedLayout = (RelativeLayout) findViewById(R.id.topRedLayout);
         mBlueLayout = (RelativeLayout) findViewById(R.id.topBlueLayout);
         btnSetting = (ImageView) findViewById(R.id.btnSettings);
-        btnBluetooth = (ImageView) findViewById(R.id.btnBluetooth);
         mTextWelcome = (TextView) findViewById(R.id.textWelcome);
         mTextMask = (TextView) findViewById(R.id.textMask);
 
@@ -202,40 +210,86 @@ public final class FaceDetectRGBActivity extends AppCompatActivity implements Su
             @Override
             public void onClick(View v) {
 
-                AlertDialog.Builder adb = new AlertDialog.Builder(FaceDetectRGBActivity.this);
-                adb.setSingleChoiceItems(languages, currentLanguage, new DialogInterface.OnClickListener() {
+                // Show Settings Dialog
 
+                String[] settings_options = {getString(R.string.option_settings_language), getString(R.string.option_settings_bluetooth)};
+
+                AlertDialog.Builder builder = new AlertDialog.Builder(FaceDetectRGBActivity.this);
+                builder.setTitle(getString(R.string.title_settings_dialog));
+                builder.setItems(settings_options, new DialogInterface.OnClickListener() {
                     @Override
-                    public void onClick(DialogInterface dialog, int n) {
+                    public void onClick(DialogInterface dialog, int which) {
 
-                        mTextWelcome.setText(listWelcome[n]);
-                        mTextMask.setText(listMask[n]);
-                        currentLanguage = n;
+                        switch (which){
 
-                        dialog.cancel();
+                            case 0 :
 
+                                // Show Language Settings Dialog
 
-                        switch(n){
-                            case 0:
-                                mpWelcome = MediaPlayer.create(FaceDetectRGBActivity.this, R.raw.welcome_eng);
-                                mpMask = MediaPlayer.create(FaceDetectRGBActivity.this, R.raw.wearyourmask_eng);
+                                AlertDialog.Builder adb = new AlertDialog.Builder(FaceDetectRGBActivity.this);
+                                adb.setSingleChoiceItems(languages, currentLanguage, new DialogInterface.OnClickListener() {
+
+                                    @Override
+                                    public void onClick(DialogInterface dialog, int n) {
+
+                                        mTextWelcome.setText(listWelcome[n]);
+                                        mTextMask.setText(listMask[n]);
+                                        currentLanguage = n;
+
+                                        dialog.cancel();
+
+                                        switch(n){
+                                            case 0:
+                                                mpWelcome = MediaPlayer.create(FaceDetectRGBActivity.this, R.raw.welcome_eng);
+                                                mpMask = MediaPlayer.create(FaceDetectRGBActivity.this, R.raw.wearyourmask_eng);
+                                                break;
+
+                                            case 1:
+                                                mpWelcome = MediaPlayer.create(FaceDetectRGBActivity.this, R.raw.welcome_fr);
+                                                mpMask = MediaPlayer.create(FaceDetectRGBActivity.this, R.raw.wearyourmask_fr);
+                                                break;
+
+                                            case 2: mpWelcome = MediaPlayer.create(FaceDetectRGBActivity.this, R.raw.welcome_it);
+                                                mpMask = MediaPlayer.create(FaceDetectRGBActivity.this, R.raw.wearyourmask_it);
+                                                break;
+
+                                        }
+                                    }
+                                });
+                                adb.setCancelable(true);
+                                adb.setTitle(listSelect[currentLanguage]);
+                                adb.show();
+
                                 break;
 
                             case 1:
-                                mpWelcome = MediaPlayer.create(FaceDetectRGBActivity.this, R.raw.welcome_fr);
-                                mpMask = MediaPlayer.create(FaceDetectRGBActivity.this, R.raw.wearyourmask_fr);
-                                break;
+                                // Show Bluetooth Dialog
 
-                            case 2: mpWelcome = MediaPlayer.create(FaceDetectRGBActivity.this, R.raw.welcome_it);
-                                mpMask = MediaPlayer.create(FaceDetectRGBActivity.this, R.raw.wearyourmask_it);
-                                break;
+                                String[] buletooth_options = { getString(R.string.option_bluetooth_scan), getString(R.string.option_bluetooth_show)};
+                                AlertDialog.Builder builder = new AlertDialog.Builder(FaceDetectRGBActivity.this);
+                                builder.setTitle(getString(R.string.option_settings_bluetooth));
+                                builder.setItems(buletooth_options, new DialogInterface.OnClickListener() {
+                                    @Override
+                                    public void onClick(DialogInterface dialog, int which) {
 
+                                        switch(which){
+                                            case 0:
+                                                // Discover bluetooth devices
+                                                discoverDevices();
+                                                break;
+
+                                            case 1:
+                                                // Shoe paired bluetooth devices
+                                                listPairedDevices();
+                                                break;
+                                        }
+                                    }
+
+                                }).show();
                         }
                     }
                 });
-                adb.setCancelable(true);
-                adb.setTitle(listSelect[currentLanguage]);
-                adb.show();
+                builder.show();
             }
         });
 
@@ -259,23 +313,262 @@ public final class FaceDetectRGBActivity extends AppCompatActivity implements Su
             cameraId = icicle.getInt(BUNDLE_CAMERA_ID, 0);
 
 
-
         mpWelcome = MediaPlayer.create(this, R.raw.welcome_eng);
         mpMask = MediaPlayer.create(this, R.raw.wearyourmask_eng);
         mpMessage = MediaPlayer.create(this, R.raw.message);
 
         mTextWelcome.setText(listWelcome[0]);
         mTextMask.setText(listMask[0]);
-
-        btnBluetooth.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                Intent intent = new Intent(FaceDetectRGBActivity.this, BluetoothActivity.class);
-                startActivity(intent);
-            }
-        });
     }
 
+
+
+    // ======================================       Manage Bluetooth features       ====================================//
+
+    private BluetoothAdapter mBTAdapter;
+    private Set<BluetoothDevice> mPairedDevices;
+    private ArrayAdapter<String> mBTArrayAdapter;
+
+    private BluetoothSocket mBTSocket = null; // bi-directional client-to-client data path
+    private static final UUID BTMODULEUUID = UUID.fromString("00001101-0000-1000-8000-00805F9B34FB"); // "random" unique identifier
+    private ConnectedThread mConnectedThread; // bluetooth background worker thread to send and receive data
+    private String bluetoothData;
+
+    private Handler mHandler = new Handler(){
+        public void handleMessage(android.os.Message msg){
+            if(msg.what == MESSAGE_READ){
+                String readMessage = null;
+                try {
+                    readMessage = new String((byte[]) msg.obj, "UTF-8");
+                } catch (UnsupportedEncodingException e) {
+                    e.printStackTrace();
+                }
+                bluetoothData = readMessage;
+            }
+
+            if(msg.what == CONNECTING_STATUS){
+                if(msg.arg1 == 1)
+                    Toast.makeText(FaceDetectRGBActivity.this, "Connected to Device: " + (String)(msg.obj), Toast.LENGTH_SHORT);
+                else
+                    Toast.makeText(FaceDetectRGBActivity.this, "Connection Failed", Toast.LENGTH_SHORT);
+            }
+        }
+    }; // Our main handler that will receive callback notifications
+
+
+
+    // #defines for identifying shared types between calling functions
+
+    private final static int REQUEST_ENABLE_BT = 1; // used to identify adding bluetooth names
+    private final static int MESSAGE_READ = 2; // used in bluetooth handler to identify message update
+    private final static int CONNECTING_STATUS = 3; // used in bluetooth handler to identify message status
+
+
+
+    private void bluetoothOn(){
+        if (!mBTAdapter.isEnabled()) {
+            Intent enableBtIntent = new Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE);
+            startActivityForResult(enableBtIntent, REQUEST_ENABLE_BT);
+            Toast.makeText(getApplicationContext(),"Bluetooth turned on",Toast.LENGTH_SHORT).show();
+        }
+        else{
+            Toast.makeText(getApplicationContext(),"Bluetooth is already on", Toast.LENGTH_SHORT).show();
+        }
+    }
+
+
+    // Discover bluetooth devices
+
+    private void discoverDevices(){
+
+        bluetoothOn();
+
+        // Check if the device is already discovering
+        if(mBTAdapter.isDiscovering()){
+            mBTAdapter.cancelDiscovery();
+            Toast.makeText(getApplicationContext(),"Discovery stopped",Toast.LENGTH_SHORT).show();
+        }
+        else{
+            if(mBTAdapter.isEnabled()) {
+                mBTArrayAdapter.clear(); // clear items
+                mBTAdapter.startDiscovery();
+                Toast.makeText(getApplicationContext(), "Discovery started", Toast.LENGTH_SHORT).show();
+                registerReceiver(blReceiver, new IntentFilter(BluetoothDevice.ACTION_FOUND));
+            }
+            else{
+                Toast.makeText(getApplicationContext(), "Bluetooth not on", Toast.LENGTH_SHORT).show();
+            }
+        }
+    }
+
+
+    final BroadcastReceiver blReceiver = new BroadcastReceiver() {
+        @Override
+        public void onReceive(Context context, Intent intent) {
+            String action = intent.getAction();
+            if(BluetoothDevice.ACTION_FOUND.equals(action)){
+                BluetoothDevice device = intent.getParcelableExtra(BluetoothDevice.EXTRA_DEVICE);
+                // add the name to the list
+                mBTArrayAdapter.add(device.getName() + "\n" + device.getAddress());
+                mBTArrayAdapter.notifyDataSetChanged();
+            }
+        }
+    };
+
+
+    private void listPairedDevices(){
+
+        bluetoothOn();
+
+        mBTArrayAdapter.clear();
+        mPairedDevices = mBTAdapter.getBondedDevices();
+        if(mBTAdapter.isEnabled()) {
+            // put it's one to the adapter
+
+            final String[] pariedDevices = (String[]) mPairedDevices.toArray();
+
+            Toast.makeText(getApplicationContext(), "Show Paired Devices", Toast.LENGTH_SHORT).show();
+
+
+            AlertDialog.Builder builder = new AlertDialog.Builder(FaceDetectRGBActivity.this);
+            builder.setTitle(getString(R.string.title_settings_dialog));
+            builder.setItems(pariedDevices, new DialogInterface.OnClickListener() {
+
+                @Override
+                public void onClick(DialogInterface dialog, int which) {
+
+                    if(!mBTAdapter.isEnabled()) {
+                        Toast.makeText(getBaseContext(), "Bluetooth not on", Toast.LENGTH_SHORT).show();
+                        return;
+                    }
+
+                    Toast.makeText(FaceDetectRGBActivity.this, "Connecting...", Toast.LENGTH_SHORT);
+                    // Get the device MAC address, which is the last 17 chars in the View
+                    String info = pariedDevices[which];
+                    final String address = info.substring(info.length() - 17);
+                    final String name = info.substring(0,info.length() - 17);
+
+                    // Spawn a new thread to avoid blocking the GUI one
+                    new Thread()
+                    {
+                        public void run() {
+                            boolean fail = false;
+
+                            BluetoothDevice device = mBTAdapter.getRemoteDevice(address);
+
+                            try {
+                                mBTSocket = createBluetoothSocket(device);
+                            } catch (IOException e) {
+                                fail = true;
+                                Toast.makeText(getBaseContext(), "Socket creation failed", Toast.LENGTH_SHORT).show();
+                            }
+                            // Establish the Bluetooth socket connection.
+                            try {
+                                mBTSocket.connect();
+                            } catch (IOException e) {
+                                try {
+                                    fail = true;
+                                    mBTSocket.close();
+                                    mHandler.obtainMessage(CONNECTING_STATUS, -1, -1)
+                                            .sendToTarget();
+                                } catch (IOException e2) {
+                                    //insert code to deal with this
+                                    Toast.makeText(getBaseContext(), "Socket creation failed", Toast.LENGTH_SHORT).show();
+                                }
+                            }
+                            if(fail == false) {
+                                mConnectedThread = new ConnectedThread(mBTSocket);
+                                mConnectedThread.start();
+
+                                mHandler.obtainMessage(CONNECTING_STATUS, 1, -1, name)
+                                        .sendToTarget();
+                            }
+                        }
+                    }.start();
+                }
+            });
+        }
+        else
+            Toast.makeText(getApplicationContext(), "Bluetooth not on", Toast.LENGTH_SHORT).show();
+    }
+
+
+
+    private BluetoothSocket createBluetoothSocket(BluetoothDevice device) throws IOException {
+        try {
+            final Method m = device.getClass().getMethod("createInsecureRfcommSocketToServiceRecord", UUID.class);
+            return (BluetoothSocket) m.invoke(device, BTMODULEUUID);
+        } catch (Exception e) {
+            Log.e(TAG, "Could not create Insecure RFComm Connection",e);
+        }
+        return  device.createRfcommSocketToServiceRecord(BTMODULEUUID);
+    }
+
+
+    private class ConnectedThread extends Thread {
+        private final BluetoothSocket mmSocket;
+        private final InputStream mmInStream;
+        private final OutputStream mmOutStream;
+
+        public ConnectedThread(BluetoothSocket socket) {
+            mmSocket = socket;
+            InputStream tmpIn = null;
+            OutputStream tmpOut = null;
+
+            // Get the input and output streams, using temp objects because
+            // member streams are final
+            try {
+                tmpIn = socket.getInputStream();
+                tmpOut = socket.getOutputStream();
+            } catch (IOException e) { }
+
+            mmInStream = tmpIn;
+            mmOutStream = tmpOut;
+        }
+
+        public void run() {
+            byte[] buffer = new byte[1024];  // buffer store for the stream
+            int bytes; // bytes returned from read()
+            // Keep listening to the InputStream until an exception occurs
+            while (true) {
+                try {
+                    // Read from the InputStream
+                    bytes = mmInStream.available();
+                    if(bytes != 0) {
+                        buffer = new byte[1024];
+                        SystemClock.sleep(100); //pause and wait for rest of data. Adjust this depending on your sending speed.
+                        bytes = mmInStream.available(); // how many bytes are ready to be read?
+                        bytes = mmInStream.read(buffer, 0, bytes); // record how many bytes we actually read
+                        mHandler.obtainMessage(MESSAGE_READ, bytes, -1, buffer)
+                                .sendToTarget(); // Send the obtained bytes to the UI activity
+                    }
+                } catch (IOException e) {
+                    e.printStackTrace();
+
+                    break;
+                }
+            }
+        }
+
+        /* Call this from the main activity to send data to the remote device */
+        public void write(String input) {
+            byte[] bytes = input.getBytes();           //converts entered String into bytes
+            try {
+                mmOutStream.write(bytes);
+            } catch (IOException e) { }
+        }
+
+        /* Call this from the main activity to shutdown the connection */
+        public void cancel() {
+            try {
+                mmSocket.close();
+            } catch (IOException e) { }
+        }
+    }
+
+
+
+    // ======================================       Manage FaceDetection features       ====================================//
 
     @Override
     protected void onPostCreate(Bundle savedInstanceState) {
@@ -735,8 +1028,6 @@ public final class FaceDetectRGBActivity extends AppCompatActivity implements Su
                                                 mFaceView.setRectColor(Color.GREEN);
                                                 mBlueLayout.setVisibility(View.VISIBLE);
 
-
-
                                             }else{
 
                                                 playSound(false);
@@ -744,9 +1035,6 @@ public final class FaceDetectRGBActivity extends AppCompatActivity implements Su
                                                 mFaceView.setRectColor(Color.RED);
                                                 mRedLayout.setVisibility(View.VISIBLE);
                                             }
-
-
-                                            mCamera.stopPreview();
 
 
                                             final Timer t = new Timer();
@@ -758,7 +1046,6 @@ public final class FaceDetectRGBActivity extends AppCompatActivity implements Su
                                                     else
                                                         mBlueLayout.setVisibility(View.INVISIBLE);
 
-                                                    mCamera.startPreview();
                                                     t.cancel();
                                                 }
                                             }, 4000);
