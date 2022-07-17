@@ -23,19 +23,9 @@ This project use method: convert Frame to bitmap then use media.FaceDetector det
 
 
 
-- **Detect Face from Camera**
+- **Detect Mask from Camera**
 
   - RGB
-
-      ![](https://github.com/betri28/FaceDetectCamera/raw/master/image/rgb.gif)
     
 
-
-##Thanks
-[bytefish][bytefish] for a sample Face Detection with Android
-  
-Developed By
-------------
-
-* Unreleased Administrator - <id.unreleased@gmail.com>
 
