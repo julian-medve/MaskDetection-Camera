@@ -1,7 +1,7 @@
-MaskDetectCamera
+Quick Access
 =====================
 
-MaskDetectCamera is a project demo Mask Detection from Camera or Image, use class media.FaceDetector android. Not using 3rd library like OpenCV or Luxand FaceSDK, ...
+Quick Access is a project demo Mask Detection from Camera or Image, use class media.FaceDetector android. Not using 3rd library like OpenCV or Luxand FaceSDK, ...
 https://github.com/betri28/FaceDetectCamera is basic detection project.
 
 Features built in:
